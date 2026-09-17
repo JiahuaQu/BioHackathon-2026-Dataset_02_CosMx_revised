@@ -409,14 +409,14 @@ def plot_gene_seg_transcripts(
 
     return (
         sdata.pl.render_shapes(
-            shapes_key,
+            element=shapes_key,
             color=gene,
             fill_alpha=0.45,
             outline_alpha=0.8,
             outline_color="white",
         )
         .pl.render_points(
-            points_key,
+            element=points_key,
             color=transcript_feature_col,
             groups=gene,
             palette=palette,
@@ -425,7 +425,7 @@ def plot_gene_seg_transcripts(
             method=points_render_method,
         )
         .pl.show(
-            coordinate_systems=coordinate_system,
+             coordinate_systems=coordinate_system,
             figsize=figsize,
             title=f"{gene}: expression + seg + transcripts",
         )
