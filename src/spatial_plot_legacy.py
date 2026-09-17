@@ -381,33 +381,174 @@ def expression_roi_center(
 
 
 def plot_gene_seg_transcripts(
-    sdata: SpatialData,
-    gene: str,
+    sdata,
+    gene,
     *,
-    shapes_key: str | None = None,
-    points_key: str = "transcripts",
-    transcript_feature_col: str | None = None,
-    coordinate_system: str = "global",
-    figsize: tuple[float, float] = (8, 8),
-    point_size: float = 1.0,
-    point_alpha: float = 0.6,
-    palette: str = "orange",
-    points_render_method: str = DEFAULT_POINTS_RENDER_METHOD,
+    shapes_key=None,
+    points_key="transcripts",
+    transcript_feature_col=None,
+    coordinate_system="global",
+    figsize=(8, 8),
+    point_size=1.0,
+    point_alpha=0.6,
+    palette="orange",
+    points_render_method="matplotlib",
 ):
-    """Modal-agnostic overlay: gene expression on segmentation + transcript spots.
-
-    Uses the table-annotated shape element by default (``cell_circles`` for Xenium,
-    ``cell_boundaries`` for CosMx).
     """
-    import spatialdata_plot  # noqa: F401 — registers .pl accessor
+    Plot cell-level gene expression on segmentation polygons together
+    with individual transcript molecules for the same gene.
+
+    Parameters
+    ----------
+    sdata
+        SpatialData object.
+
+    gene
+        Gene to visualize.
+
+    shapes_key
+        Shape element corresponding to segmented cells.
+        If None, infer it from table spatialdata metadata.
+
+    points_key
+        SpatialData point element containing transcript molecules.
+
+    transcript_feature_col
+        Column identifying transcript target/gene.
+        If None, infer from feature_name / target / gene.
+
+    coordinate_system
+        Coordinate system used for plotting.
+
+    figsize
+        Figure size.
+
+    point_size
+        Transcript point size.
+
+    point_alpha
+        Transcript point transparency.
+
+    palette
+        Color used for transcript molecules.
+
+    points_render_method
+        spatialdata-plot point rendering backend.
+
+    Returns
+    -------
+    Plot object returned by spatialdata-plot.
+    """
+
+    import spatialdata_plot  # noqa: F401
+
+    # --------------------------------------------------------
+    # Table
+    # --------------------------------------------------------
 
     table = sdata["table"]
-    if shapes_key is None:
-        shapes_key = table.uns["spatialdata_attrs"]["region"]
-    if transcript_feature_col is None:
-        transcript_feature_col = _infer_transcript_feature_col(sdata, points_key)
 
-    return (
+    # --------------------------------------------------------
+    # Infer shape element
+    # --------------------------------------------------------
+
+    if shapes_key is None:
+
+        attrs = table.uns.get(
+            "spatialdata_attrs",
+            {},
+        )
+
+        region = attrs.get("region")
+
+        if isinstance(region, (list, tuple)):
+            if len(region) != 1:
+                raise ValueError(
+                    "Could not uniquely infer shapes element "
+                    f"from table region: {region}"
+                )
+            shapes_key = region[0]
+
+        else:
+            shapes_key = region
+
+    if shapes_key is None:
+        raise ValueError(
+            "Could not infer shapes_key from "
+            "table.uns['spatialdata_attrs']."
+        )
+
+    if shapes_key not in sdata.shapes:
+        raise KeyError(
+            f"Shape element {shapes_key!r} "
+            "not found in sdata.shapes."
+        )
+
+    # --------------------------------------------------------
+    # Validate gene
+    # --------------------------------------------------------
+
+    if gene not in table.var_names:
+        raise KeyError(
+            f"Gene {gene!r} not found in "
+            "sdata['table'].var_names."
+        )
+
+    # --------------------------------------------------------
+    # Validate points
+    # --------------------------------------------------------
+
+    if points_key not in sdata.points:
+        raise KeyError(
+            f"Point element {points_key!r} "
+            "not found in sdata.points."
+        )
+
+    # --------------------------------------------------------
+    # Infer transcript feature column
+    # --------------------------------------------------------
+
+    if transcript_feature_col is None:
+
+        point_columns = set(
+            sdata[points_key].columns
+        )
+
+        for candidate in (
+            "feature_name",
+            "target",
+            "gene",
+        ):
+
+            if candidate in point_columns:
+                transcript_feature_col = candidate
+                break
+
+        if transcript_feature_col is None:
+            raise ValueError(
+                "Could not infer transcript feature column. "
+                f"Available columns: {sorted(point_columns)}"
+            )
+
+    # --------------------------------------------------------
+    # Report what is being plotted
+    # --------------------------------------------------------
+
+    print(
+        f"Plotting {gene}: "
+        f"shapes={shapes_key!r}, "
+        f"points={points_key!r}, "
+        f"feature={transcript_feature_col!r}"
+    )
+
+    # --------------------------------------------------------
+    # IMPORTANT:
+    #
+    # spatialdata-plot 0.3.3 expects the element to be supplied
+    # explicitly as the `element=` keyword.
+    # --------------------------------------------------------
+
+    plot = (
         sdata.pl.render_shapes(
             element=shapes_key,
             color=gene,
@@ -425,8 +566,13 @@ def plot_gene_seg_transcripts(
             method=points_render_method,
         )
         .pl.show(
-             coordinate_systems=coordinate_system,
+            coordinate_systems=coordinate_system,
             figsize=figsize,
-            title=f"{gene}: expression + seg + transcripts",
+            title=(
+                f"{gene}: expression + "
+                "segmentation + transcripts"
+            ),
         )
     )
+
+    return plot
