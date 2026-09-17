@@ -1,0 +1,8 @@
+{
+  "min_counts": 22,
+  "min_genes": 20,
+  "max_counts": 4699,
+  "max_control_fraction": 0.019607843831181526,
+  "min_cell_area": 2578.958031800247,
+  "max_cell_area": 16284.66181391788
+}
