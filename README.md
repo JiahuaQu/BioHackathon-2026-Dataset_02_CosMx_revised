@@ -365,10 +365,13 @@ results/FOV46/figures/
 
 - GEO series: GSE299786 — Comparison of imaging-based single-cell-resolution spatial transcriptomics profiling platforms using FFPE tumor samples.
 - Sample: GSM9046088 — Lung Adenocarcinoma TMA1, CosMx.
-- Publication associated with the dataset: *Nature Communications* (2025), PubMed PMID 41006245.
+- Publication associated with the dataset: *Nature Communications* (2025), PubMed PMID 41006245
+        
+        .
         
 # Cite
 I would appreciate a citation or acknowledgment in your paper if you use any part or all of this pipeline. 
 
 # Update
 1. I added scripts to the `jupyter` folder for running the pipeline and submitting jobs from Jupyter Notebook, and to the `jupyter-2` folder for running the code interactively and adjusting parameters in real time.
+2. Keep checking, revising and updating scripts, uploaded to Jupyter-3 and so on.
